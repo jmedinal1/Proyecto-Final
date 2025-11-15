@@ -141,7 +141,7 @@ public class TurnoController {
             @PathVariable Long id,
             @RequestBody ReasignarTurnoRequest request) {
 
-        // Validaciones simples
+        // Validaciones básicas
         if (request.getNuevaArea() == null || request.getNuevaArea().isBlank()
                 || request.getMotivo() == null || request.getMotivo().isBlank()) {
             return ResponseEntity.badRequest().build();
@@ -155,12 +155,11 @@ public class TurnoController {
             );
             return ResponseEntity.ok(actualizado);
         } catch (RuntimeException ex) {
-            // Por si no se encuentra el turno
+            // Por ejemplo, si el turno no existe
             return ResponseEntity.notFound().build();
         }
     }
 
-
-
 }
+
 
