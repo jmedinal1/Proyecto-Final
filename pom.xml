@@ -30,6 +30,13 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.4</version>
+        </dependency>
+
+
         <!-- Spring Boot JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
