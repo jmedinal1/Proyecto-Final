@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Turnos - Hospital</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CDN (solo para que se vea decente sin mucho esfuerzo) -->
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+    />
+
+    <style>
+        body { padding-top: 20px; }
+        .card { margin-bottom: 20px; }
+        .turno-en-espera { font-weight: bold; }
+        .area-tag {
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container">
+    <h1 class="mb-4">Sistema de Turnos - Hospital</h1>
+
+    <!-- Sección: Generar Turno -->
+    <div class="card">
+        <div class="card-header">
+            Generar nuevo turno para paciente
+        </div>
+        <div class="card-body">
+            <form id="formCrearTurno" class="row g-3">
+                <div class="col-md-3">
+                    <label for="numeroTurno" class="form-label">Número de turno</label>
+                    <input type="number" class="form-control" id="numeroTurno" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="areaTurno" class="form-label">Área</label>
+                    <select class="form-select" id="areaTurno" required>
+                        <option value="">Seleccione...</option>
+                        <option value="EMERGENCIA">Emergencia</option>
+                        <option value="CONSULTA_EXTERNA">Consulta externa</option>
+                        <option value="LABORATORIO">Laboratorio</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="pacienteId" class="form-label">ID Paciente</label>
+                    <input type="number" class="form-control" id="pacienteId" required>
+                    <div class="form-text">
+                        Usa un ID válido de la tabla pacientes.
+                    </div>
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Crear turno
+                    </button>
+                </div>
+            </form>
+
+            <div id="mensajeCrearTurno" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- Sección: Turnos en espera -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Turnos en espera</span>
+            <button id="btnRefrescarTurnos" class="btn btn-sm btn-outline-secondary">
+                Actualizar lista
+            </button>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm table-striped">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Número</th>
+                    <th>Área</th>
+                    <th>Estado</th>
+                    <th>Fecha creación</th>
+                    <th>Paciente</th>
+                    <th>Prioridad</th>
+                </tr>
+                </thead>
+                <tbody id="tablaTurnosActivos">
+                <!-- Aquí se llenan los turnos por JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sección: Llamar siguiente turno -->
+    <div class="card">
+        <div class="card-header">
+            Llamar siguiente turno por área
+        </div>
+        <div class="card-body">
+            <form id="formLlamarTurno" class="row g-3">
+                <div class="col-md-4">
+                    <label for="areaLlamar" class="form-label">Área</label>
+                    <select class="form-select" id="areaLlamar" required>
+                        <option value="">Seleccione...</option>
+                        <option value="EMERGENCIA">Emergencia</option>
+                        <option value="CONSULTA_EXTERNA">Consulta externa</option>
+                        <option value="LABORATORIO">Laboratorio</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        Llamar siguiente turno
+                    </button>
+                </div>
+            </form>
+
+            <div id="resultadoLlamar" class="mt-3"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080';
+
+    // Mostrar mensaje en un div (éxito / error)
+    function mostrarMensaje(elementId, mensaje, tipo = 'success') {
+        const div = document.getElementById(elementId);
+        div.innerHTML =
+            '<div class="alert alert-' + tipo + ' alert-sm py-2 mb-0">' +
+            mensaje +
+            '</div>';
+    }
+
+    // 1) Crear turno
+    document.getElementById('formCrearTurno').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const numero = parseInt(document.getElementById('numeroTurno').value, 10);
+        const area = document.getElementById('areaTurno').value;
+        const pacienteId = parseInt(document.getElementById('pacienteId').value, 10);
+
+        const body = {
+            numero: numero,
+            area: area,
+            paciente: { id: pacienteId }
+        };
+
+        try {
+            const resp = await fetch(API_BASE + '/api/turnos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (!resp.ok) {
+                const errorText = await resp.text();
+                mostrarMensaje('mensajeCrearTurno', 'Error al crear turno: ' + errorText, 'danger');
+                return;
+            }
+
+            const data = await resp.json();
+            mostrarMensaje('mensajeCrearTurno',
+                'Turno creado correctamente. ID: ' + data.id,
+                'success');
+
+            // Limpia campos y refresca la tabla
+            document.getElementById('formCrearTurno').reset();
+            cargarTurnosActivos();
+
+        } catch (error) {
+            mostrarMensaje('mensajeCrearTurno', 'Error de conexión con el servidor', 'danger');
+            console.error(error);
+        }
+    });
+
+    // 2) Cargar turnos activos
+    async function cargarTurnosActivos() {
+        try {
+            const resp = await fetch(API_BASE + '/api/turnos/activos');
+            const turnos = await resp.json();
+
+            const tbody = document.getElementById('tablaTurnosActivos');
+            tbody.innerHTML = '';
+
+            if (!Array.isArray(turnos) || turnos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay turnos en espera</td></tr>';
+                return;
+            }
+
+            turnos.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${t.id}</td>
+                    <td class="turno-en-espera">${t.numero}</td>
+                    <td><span class="area-tag">${t.area}</span></td>
+                    <td>${t.estado}</td>
+                    <td>${t.fechaCreacion ?? ''}</td>
+                    <td>${t.paciente ? t.paciente.nombre : '-'}</td>
+                    <td>${t.paciente ? t.paciente.prioridad : '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    document.getElementById('btnRefrescarTurnos')
+        .addEventListener('click', cargarTurnosActivos);
+
+    // 3) Llamar siguiente turno
+    document.getElementById('formLlamarTurno').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const area = document.getElementById('areaLlamar').value;
+        if (!area) return;
+
+        try {
+            const resp = await fetch(API_BASE + '/api/turnos/llamar/' + area, {
+                method: 'POST'
+            });
+
+            if (resp.status === 404) {
+                mostrarMensaje('resultadoLlamar',
+                    'No hay turnos en espera para el área seleccionada.',
+                    'warning');
+                return;
+            }
+
+            if (!resp.ok) {
+                mostrarMensaje('resultadoLlamar', 'Error al llamar turno.', 'danger');
+                return;
+            }
+
+            const turno = await resp.json();
+            mostrarMensaje('resultadoLlamar',
+                'Turno llamado: ' + turno.numero + ' - Paciente: ' +
+                (turno.paciente ? turno.paciente.nombre : 'N/A'),
+                'success');
+
+            // Refrescar la tabla de activos
+            cargarTurnosActivos();
+
+        } catch (error) {
+            console.error(error);
+            mostrarMensaje('resultadoLlamar', 'Error de conexión con el servidor.', 'danger');
+        }
+    });
+
+    // Cargar turnos al entrar a la página
+    window.addEventListener('load', cargarTurnosActivos);
+</script>
+
+</body>
+</html>
