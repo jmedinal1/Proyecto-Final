@@ -6,10 +6,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+
 
 import java.util.List;
+import java.util.Optional;
 
-@RestController
+@Controller
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
 public class UsuarioController {
@@ -61,5 +69,33 @@ public class UsuarioController {
         }
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/login")
+    public String login(
+            @RequestParam("username") String username,
+            @RequestParam("rol") String rol,
+            HttpSession session
+    ) {
+
+        Optional<Usuario> usuarioOpt = usuarioService.buscarPorUsername(username);
+
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+
+            if (usuario.getRol().equalsIgnoreCase(rol)) {
+                session.setAttribute("usuarioLogueado", usuario);
+
+                if (rol.equalsIgnoreCase("ADMIN"))
+                    return "redirect:/admin.html";
+
+                if (rol.equalsIgnoreCase("RECEPCION"))
+                    return "redirect:/recepcion.html";
+
+                return "redirect:/index.html";
+            }
+        }
+
+        return "redirect:/login.html?error=true";
     }
 }

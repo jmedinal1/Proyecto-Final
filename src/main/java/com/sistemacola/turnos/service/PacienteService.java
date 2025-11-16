@@ -14,42 +14,39 @@ public class PacienteService {
 
     private final PacienteRepository pacienteRepository;
 
-    // Crear paciente
     public Paciente crear(Paciente paciente) {
         return pacienteRepository.save(paciente);
     }
 
-    // Listar todos los pacientes
-    public List<Paciente> listarTodos() {
+    public List<Paciente> listar() {
         return pacienteRepository.findAll();
     }
 
-    // Buscar por ID
-    public Optional<Paciente> buscarPorId(Long id) {
+    public Optional<Paciente> obtenerPorId(Long id) {
         return pacienteRepository.findById(id);
     }
 
-    // Actualizar paciente
-    public Optional<Paciente> actualizar(Long id, Paciente datos) {
-        return pacienteRepository.findById(id).map(existing -> {
-            existing.setNombre(datos.getNombre());
-            existing.setSintomas(datos.getSintomas());
-            existing.setPrioridad(datos.getPrioridad());
-            return pacienteRepository.save(existing);
-        });
-    }
-
-    // Eliminar paciente
     public boolean eliminar(Long id) {
-        return pacienteRepository.findById(id).map(p -> {
-            pacienteRepository.delete(p);
-            return true;
-        }).orElse(false);
+        if (!pacienteRepository.existsById(id)) {
+            return false;
+        }
+        pacienteRepository.deleteById(id);
+        return true;
     }
 
-    // Listar por prioridad (1 = alta, 2 = media, 3 = baja, por ejemplo)
-    public List<Paciente> listarPorPrioridad(int prioridad) {
-        return pacienteRepository.findByPrioridadOrderByNombreAsc(prioridad);
+    public Paciente actualizar(Long id, Paciente datos) {
+        Optional<Paciente> opt = pacienteRepository.findById(id);
+        if (opt.isEmpty()) return null;
+
+        Paciente p = opt.get();
+        p.setNombre(datos.getNombre());
+        p.setPrioridad(datos.getPrioridad());
+        p.setSintomas(datos.getSintomas());
+
+        return pacienteRepository.save(p);
     }
+
+
 }
+
 

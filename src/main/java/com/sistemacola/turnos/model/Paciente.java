@@ -1,25 +1,29 @@
 package com.sistemacola.turnos.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Data
 @Table(name = "paciente")
+@Getter
+@Setter
 public class Paciente {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 200)
+    @Column(length = 200, nullable = false)
     private String nombre;
+
+    @Column(nullable = false)
+    private Integer prioridad;  // 1 = Alta, 2 = Media, 3 = Baja
 
     @Column(length = 500)
     private String sintomas;
-
-    @Column(nullable = false)
-    private int prioridad; // 1 = alta, 2 = media, 3 = baja (por ejemplo)
 }
+
+
 
 

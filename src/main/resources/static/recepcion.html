@@ -18,8 +18,16 @@
 <div class="container my-4">
 
     <!-- Crear nuevo turno -->
+    <!-- Crear nuevo turno -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header">Generar nuevo turno</div>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Generar nuevo turno</span>
+
+            <!-- 🔹 Botón para ir a registro de pacientes -->
+            <a href="ventanilla.html" class="btn btn-outline-primary btn-sm">
+                Registrar paciente
+            </a>
+        </div>
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
@@ -156,6 +164,15 @@
         localStorage.clear();
         window.location = "login.html";
     }
+
+    // Si venimos de registrar un paciente, colocar automáticamente el ID
+    const ultimoPacienteId = localStorage.getItem('ultimoPacienteId');
+    if (ultimoPacienteId) {
+        const txt = document.getElementById('txtPacienteId');
+        if (txt) txt.value = ultimoPacienteId;
+        localStorage.removeItem('ultimoPacienteId');
+    }
+
 
     // ===========================
     //  CREAR TURNO

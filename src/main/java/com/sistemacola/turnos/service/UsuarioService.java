@@ -14,39 +14,44 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
 
-    // Crear
+    // Crear usuario
     public Usuario crear(Usuario usuario) {
         return usuarioRepository.save(usuario);
     }
 
-    // Listar
+    // Listar todos
     public List<Usuario> listar() {
         return usuarioRepository.findAll();
     }
 
-    // Obtener por ID
+    // Obtener usuario por ID
     public Optional<Usuario> obtenerPorId(Long id) {
         return usuarioRepository.findById(id);
     }
 
-    // Actualizar
+    // Actualizar usuario
     public Usuario actualizar(Long id, Usuario usuarioActualizado) {
-        return usuarioRepository.findById(id).map(usuario -> {
-
-            usuario.setNombre(usuarioActualizado.getNombre());
-            usuario.setRol(usuarioActualizado.getRol());
-            usuario.setPasswordHash(usuarioActualizado.getPasswordHash());
-
-            return usuarioRepository.save(usuario);
-        }).orElse(null);
+        return usuarioRepository.findById(id)
+                .map(u -> {
+                    u.setUsername(usuarioActualizado.getUsername());
+                    u.setPassword(usuarioActualizado.getPassword());
+                    u.setRol(usuarioActualizado.getRol());
+                    return usuarioRepository.save(u);
+                })
+                .orElse(null);
     }
 
-    // Eliminar
+    // Eliminar usuario
     public boolean eliminar(Long id) {
-        return usuarioRepository.findById(id).map(usuario -> {
-            usuarioRepository.delete(usuario);
+        if (usuarioRepository.existsById(id)) {
+            usuarioRepository.deleteById(id);
             return true;
-        }).orElse(false);
+        }
+        return false;
+    }
+
+    // Buscar por username (para el login)
+    public Optional<Usuario> buscarPorUsername(String username) {
+        return usuarioRepository.findByUsername(username);
     }
 }
-

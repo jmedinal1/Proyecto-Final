@@ -2,166 +2,137 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Ventanilla - Sistema de Turnos</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-    />
-    <style>
-        body { padding-top: 20px; }
-        .card { margin-bottom: 20px; }
-        .turno-num { font-weight: bold; font-size: 1.1rem; }
-    </style>
+    <title>Registrar Paciente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-<div class="container">
-    <h1 class="mb-4">Ventanilla - Atención de Turnos</h1>
 
-    <!-- Selección de área -->
-    <div class="card">
-        <div class="card-header">Área de atención</div>
+<nav class="navbar navbar-dark bg-primary px-3">
+    <span class="navbar-brand">Sistema de Turnos - Registro de Paciente</span>
+    <div>
+        <span id="infoUsuario" class="text-white me-3"></span>
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">Cerrar sesión</button>
+    </div>
+</nav>
+
+<div class="container my-4">
+
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Registrar nuevo paciente</span>
+            <a href="recepcion.html" class="btn btn-outline-secondary btn-sm">Volver a Recepción</a>
+        </div>
+
         <div class="card-body">
-            <form id="formArea" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label" for="areaVentanilla">Área</label>
-                    <select id="areaVentanilla" class="form-select" required>
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Nombre del paciente</label>
+                    <!-- OJO: id = txtNombre -->
+                    <input id="txtNombre" type="text" class="form-control" placeholder="Ej: Juan Pérez" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Prioridad (1–3)</label>
+                    <select id="selPrioridad" class="form-select">
                         <option value="">Seleccione...</option>
-                        <option value="EMERGENCIA">Emergencia</option>
-                        <option value="CONSULTA_EXTERNA">Consulta externa</option>
-                        <option value="LABORATORIO">Laboratorio</option>
+                        <option value="1">1 - Alta</option>
+                        <option value="2">2 - Media</option>
+                        <option value="3">3 - Baja</option>
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-outline-secondary">
-                        Ver cola
-                    </button>
+
+                <div class="col-md-12">
+                    <label class="form-label">Síntomas (opcional)</label>
+                    <textarea id="txtSintomas" class="form-control" rows="3"
+                              placeholder="Ej: Dolor abdominal, fiebre..."></textarea>
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
 
-    <!-- Cola de turnos -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Turnos en espera en el área</span>
-            <button id="btnRefrescarCola" class="btn btn-sm btn-outline-secondary">
-                Actualizar
-            </button>
-        </div>
-        <div class="card-body">
-            <table class="table table-sm table-striped">
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Número</th>
-                    <th>Paciente</th>
-                    <th>Prioridad</th>
-                    <th>Estado</th>
-                </tr>
-                </thead>
-                <tbody id="tablaCola">
-                </tbody>
-            </table>
-        </div>
-    </div>
+            <div id="msgPaciente" class="alert mt-3 d-none" role="alert"></div>
 
-    <!-- Llamar siguiente -->
-    <div class="card">
-        <div class="card-header">Llamar siguiente turno</div>
-        <div class="card-body">
-            <button id="btnLlamar" class="btn btn-success">
-                Llamar siguiente en el área seleccionada
-            </button>
-            <div id="msgLlamar" class="mt-3"></div>
+            <div class="mt-3 d-flex justify-content-end">
+                <button class="btn btn-success" onclick="guardarPaciente()">Guardar paciente</button>
+            </div>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-    const API = 'http://localhost:8080';
+    // =============================
+    //   VALIDACIÓN DE SESIÓN
+    // =============================
+    const rol = localStorage.getItem("usuarioRol");
+    const nombreUsuario = localStorage.getItem("usuarioNombre");
 
-    function showMsg(id, text, type = 'success') {
-        document.getElementById(id).innerHTML =
-            `<div class="alert alert-${type} py-2 mb-0">${text}</div>`;
+    if (!rol || (rol !== "RECEPCION" && rol !== "ADMIN")) {
+        window.location = "login.html";
     }
 
-    let areaActual = '';
+    document.getElementById("infoUsuario").textContent =
+        (nombreUsuario || "Usuario") + " (" + rol + ")";
 
-    async function cargarCola() {
-        if (!areaActual) return;
-
-        try {
-            const r = await fetch(API + '/api/turnos/area/' + areaActual);
-            const lista = await r.json();
-            const tbody = document.getElementById('tablaCola');
-            tbody.innerHTML = '';
-
-            // solo EN_ESPERA
-            const enEspera = lista.filter(t => t.estado === 'EN_ESPERA');
-
-            if (enEspera.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Sin turnos en espera</td></tr>';
-                return;
-            }
-
-            enEspera.forEach(t => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${t.id}</td>
-                    <td class="turno-num">${t.numero}</td>
-                    <td>${t.paciente ? t.paciente.nombre : '-'}</td>
-                    <td>${t.paciente ? t.paciente.prioridad : '-'}</td>
-                    <td>${t.estado}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-        } catch (err) {
-            console.error(err);
-        }
+    function logout() {
+        localStorage.clear();
+        window.location = "login.html";
     }
 
-    document.getElementById('formArea').addEventListener('submit', (e) => {
-        e.preventDefault();
-        areaActual = document.getElementById('areaVentanilla').value;
-        cargarCola();
-    });
+    // =============================
+    //   GUARDAR PACIENTE
+    // =============================
+    async function guardarPaciente() {
+        // CORREGIDO: usar txtNombre
+        const nombre = document.getElementById('txtNombre').value.trim();
+        const prioridad = document.getElementById('selPrioridad').value;
+        const sintomas = document.getElementById('txtSintomas').value.trim();
+        const msg = document.getElementById('msgPaciente');
 
-    document.getElementById('btnRefrescarCola').addEventListener('click', cargarCola);
+        msg.classList.add('d-none');
 
-    document.getElementById('btnLlamar').addEventListener('click', async () => {
-        if (!areaActual) {
-            showMsg('msgLlamar', 'Seleccione un área primero.', 'warning');
+        if (!nombre || !prioridad) {
+            msg.textContent = 'Nombre y prioridad son obligatorios.';
+            msg.className = 'alert alert-warning mt-3 d-block';
             return;
         }
 
+        const paciente = {
+            nombre: nombre,
+            prioridad: parseInt(prioridad),
+            sintomas: sintomas
+        };
+
         try {
-            const r = await fetch(API + '/api/turnos/llamar/' + areaActual, {
-                method: 'POST'
+            const resp = await fetch('/api/pacientes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(paciente)
             });
 
-            if (r.status === 404) {
-                showMsg('msgLlamar', 'No hay turnos en espera para esa área.', 'warning');
+            if (!resp.ok) {
+                const text = await resp.text();
+                msg.textContent = 'Error al guardar paciente: ' + text;
+                msg.className = 'alert alert-danger mt-3 d-block';
                 return;
             }
-            if (!r.ok) {
-                showMsg('msgLlamar', 'Error al llamar turno.', 'danger');
-                return;
-            }
 
-            const turno = await r.json();
-            showMsg('msgLlamar',
-                `Turno llamado: ${turno.numero} - Paciente: ${turno.paciente ? turno.paciente.nombre : 'N/A'}`,
-                'success');
+            const creado = await resp.json();
+            msg.textContent = 'Paciente guardado correctamente. ID: ' + creado.id;
+            msg.className = 'alert alert-success mt-3 d-block';
 
-            cargarCola();
+            // Limpiar formulario (CORREGIDO)
+            document.getElementById('txtNombre').value = '';
+            document.getElementById('selPrioridad').value = '';
+            document.getElementById('txtSintomas').value = '';
 
-        } catch (err) {
-            console.error(err);
-            showMsg('msgLlamar', 'Error de conexión.', 'danger');
+        } catch (e) {
+            console.error(e);
+            msg.textContent = 'Error de conexión con el servidor.';
+            msg.className = 'alert alert-danger mt-3 d-block';
         }
-    });
+    }
 </script>
+
 </body>
 </html>

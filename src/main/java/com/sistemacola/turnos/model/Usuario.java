@@ -4,13 +4,17 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Data
+@Data   // ? ESTO genera getters/setters automáticamente
 public class Usuario {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nombre;
+    private String username;
+
+    private String password;
+
     private String rol;
-    private String passwordHash;
 }
+

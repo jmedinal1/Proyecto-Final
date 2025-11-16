@@ -8,9 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/pacientes")
+@RequestMapping("/api/pacientes")   // ? OJO: debe coincidir con el fetch del HTML
 @RequiredArgsConstructor
 public class PacienteController {
 
@@ -23,32 +24,34 @@ public class PacienteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
-    // Listar todos
+    // Listar todos (por si luego lo necesitas)
     @GetMapping
-    public List<Paciente> listarTodos() {
-        return pacienteService.listarTodos();
+    public List<Paciente> listar() {
+        return pacienteService.listar();
     }
 
     // Obtener por ID
     @GetMapping("/{id}")
     public ResponseEntity<Paciente> obtenerPorId(@PathVariable Long id) {
-        return pacienteService.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Optional<Paciente> opt = pacienteService.obtenerPorId(id);
+        return opt.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // Actualizar paciente
+    // Actualizar (opcional)
     @PutMapping("/{id}")
     public ResponseEntity<Paciente> actualizar(
             @PathVariable Long id,
-            @RequestBody Paciente datos) {
+            @RequestBody Paciente pacienteActualizado) {
 
-        return pacienteService.actualizar(id, datos)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Paciente actualizado = pacienteService.actualizar(id, pacienteActualizado);
+        if (actualizado == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(actualizado);
     }
 
-    // Eliminar paciente
+    // Eliminar (opcional)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         boolean eliminado = pacienteService.eliminar(id);
@@ -56,12 +59,6 @@ public class PacienteController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
-    }
-
-    // Listar por prioridad
-    @GetMapping("/prioridad/{prioridad}")
-    public List<Paciente> listarPorPrioridad(@PathVariable int prioridad) {
-        return pacienteService.listarPorPrioridad(prioridad);
     }
 }
 

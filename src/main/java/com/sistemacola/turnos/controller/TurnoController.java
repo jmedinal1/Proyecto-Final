@@ -31,7 +31,7 @@ public class TurnoController {
         if (turno.getPaciente() != null && turno.getPaciente().getId() != null) {
             Long pacienteId = turno.getPaciente().getId();
 
-            var pacienteOpt = pacienteService.buscarPorId(pacienteId);
+            var pacienteOpt = pacienteService.obtenerPorId(pacienteId);
             if (pacienteOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("El paciente con id " + pacienteId + " no existe.");
