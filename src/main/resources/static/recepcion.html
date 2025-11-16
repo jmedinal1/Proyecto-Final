@@ -9,11 +9,26 @@
 
 <nav class="navbar navbar-dark bg-primary px-3">
     <span class="navbar-brand">Sistema de Turnos - Recepción</span>
-    <div>
-        <span id="infoUsuario" class="text-white me-3"></span>
+
+    <div class="d-flex align-items-center gap-2">
+        <!-- Botón Pantalla de Turnos -->
+        <a href="pantalla.html" class="btn btn-light btn-sm">
+            📺 Pantalla
+        </a>
+
+        <!-- Botón Administración -->
+        <a href="admin.html" class="btn btn-warning btn-sm">
+            ⚙️ Admin
+        </a>
+
+        <!-- Info usuario -->
+        <span id="infoUsuario" class="text-white mx-3"></span>
+
+        <!-- Botón Cerrar sesión -->
         <button class="btn btn-outline-light btn-sm" onclick="logout()">Cerrar sesión</button>
     </div>
 </nav>
+
 
 <div class="container my-4">
 

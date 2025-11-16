@@ -17,6 +17,7 @@
                 </div>
 
                 <div class="card-body">
+                    <!-- Formulario de login -->
                     <div class="mb-3">
                         <label class="form-label">Nombre de usuario</label>
                         <input id="txtNombre" type="text" class="form-control" placeholder="Ej: Julio">
@@ -26,15 +27,17 @@
                         <label class="form-label">Rol</label>
                         <select id="selRol" class="form-select">
                             <option value="">Seleccione...</option>
-                            <option value="ADMIN">Admin</option>
-                            <option value="RECEPCION">Recepción</option>
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="RECEPCION">RECEPCION</option>
                         </select>
                     </div>
 
                     <button class="btn btn-primary w-100" onclick="login()">Entrar</button>
 
-                    <div id="errorBox" class="text-danger mt-2" style="display:none;">
-                        Usuario o rol incorrecto
+                    <!-- Mensaje de error -->
+                    <div id="errorBox"
+                         class="alert alert-danger mt-3 d-none">
+                        Usuario o rol incorrectos.
                     </div>
                 </div>
             </div>
@@ -43,12 +46,24 @@
 </div>
 
 <script>
+    // Opcional: al cargar la página limpiamos cualquier sesión previa en localStorage
+    document.addEventListener("DOMContentLoaded", () => {
+        // Si quieres mantener la sesión previa, comenta estas dos líneas
+        localStorage.removeItem("usuarioNombre");
+        localStorage.removeItem("usuarioRol");
+    });
+
     async function login() {
-        const username = document.getElementById("txtNombre").value;
+        const username = document.getElementById("txtNombre").value.trim();
         const rol = document.getElementById("selRol").value;
+        const errorBox = document.getElementById("errorBox");
+
+        // Ocultamos error previo
+        errorBox.classList.add("d-none");
 
         if (!username || !rol) {
-            alert("Complete ambos campos");
+            errorBox.textContent = "Complete ambos campos.";
+            errorBox.classList.remove("d-none");
             return;
         }
 
@@ -64,18 +79,35 @@
                 })
             });
 
-            // Si el backend responde un redirect Spring, JS debe seguirlo
+            // Fetch sigue los redirects automáticamente.
+            // Si hubo redirect, response.url es la URL final.
             if (response.redirected) {
-                window.location.href = response.url;
+                const destino = response.url || "";
+
+                // Si el destino final es login.html => credenciales inválidas
+                if (destino.includes("login.html")) {
+                    errorBox.textContent = "Usuario o rol incorrectos.";
+                    errorBox.classList.remove("d-none");
+                    return;
+                }
+
+                // Login correcto: guardamos datos en localStorage
+                localStorage.setItem("usuarioNombre", username);
+                localStorage.setItem("usuarioRol", rol);
+
+                // Redirigimos a la página que indicó el backend
+                window.location.href = destino;
                 return;
             }
 
-            // Si no redireccionó = error de login
-            document.getElementById("errorBox").style.display = "block";
+            // Si no hubo redirect, también lo consideramos error de login
+            errorBox.textContent = "Usuario o rol incorrectos.";
+            errorBox.classList.remove("d-none");
 
         } catch (e) {
             console.error("Error:", e);
-            alert("Error de conexión con el servidor");
+            errorBox.textContent = "Error de conexión con el servidor.";
+            errorBox.classList.remove("d-none");
         }
     }
 </script>

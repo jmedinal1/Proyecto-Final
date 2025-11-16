@@ -73,29 +73,31 @@ public class UsuarioController {
 
     @PostMapping("/login")
     public String login(
-            @RequestParam("username") String username,
-            @RequestParam("rol") String rol,
-            HttpSession session
-    ) {
+            @RequestParam String username,
+            @RequestParam String rol,
+            HttpSession session) {
 
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorUsername(username);
 
         if (usuarioOpt.isPresent()) {
             Usuario usuario = usuarioOpt.get();
 
-            if (usuario.getRol().equalsIgnoreCase(rol)) {
+            if (usuario.getRol() != null &&
+                    usuario.getRol().equalsIgnoreCase(rol)) {
+
                 session.setAttribute("usuarioLogueado", usuario);
 
-                if (rol.equalsIgnoreCase("ADMIN"))
+                if ("ADMIN".equalsIgnoreCase(rol)) {
                     return "redirect:/admin.html";
-
-                if (rol.equalsIgnoreCase("RECEPCION"))
+                } else if ("RECEPCION".equalsIgnoreCase(rol)) {
                     return "redirect:/recepcion.html";
-
-                return "redirect:/index.html";
+                } else {
+                    return "redirect:/index.html";
+                }
             }
         }
 
         return "redirect:/login.html?error=true";
     }
+
 }

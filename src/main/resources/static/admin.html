@@ -19,6 +19,40 @@
 </head>
 <body>
 
+<nav class="navbar navbar-dark bg-primary px-3">
+    <a class="navbar-brand" href="recepcion.html">
+        Sistema de Turnos
+    </a>
+
+    <div class="d-flex align-items-center gap-2">
+        <!-- Botones de navegación -->
+        <a href="recepcion.html" class="btn btn-light btn-sm">
+            Recepción
+        </a>
+
+        <a href="ventanilla.html" class="btn btn-outline-light btn-sm">
+            Ventanilla
+        </a>
+
+        <a href="pantalla.html" class="btn btn-outline-light btn-sm">
+            Pantalla
+        </a>
+
+        <a href="admin.html" class="btn btn-warning btn-sm">
+            Admin
+        </a>
+
+        <!-- Info del usuario -->
+        <span id="infoUsuario" class="text-white mx-3"></span>
+
+        <!-- Cerrar sesión -->
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">
+            Cerrar sesión
+        </button>
+    </div>
+</nav>
+
+
 <div class="container">
     <h1 class="mb-4">Dashboard de Administración</h1>
 
